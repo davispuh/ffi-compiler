@@ -2,6 +2,8 @@ require 'rake'
 require 'rake/tasklib'
 require 'rake/clean'
 require 'ffi'
+require 'fileutils'
+require 'shellwords'
 require 'tmpdir'
 require 'rbconfig'
 require_relative 'platform'
@@ -130,17 +132,17 @@ module FFI
           obj_file = obj_files[index]
           if src =~ /\.c$/
             file obj_file => [ src, File.dirname(obj_file) ] do |t|
-              sh "#{cc} #{cflags} -o #{t.name} -c #{t.prerequisites[0]}"
+              sh [cc, cflags, "-o", t.name, "-c", t.prerequisites[0]].shelljoin
             end
 
           elsif src =~ /\.go$/
             file obj_file => [ src, File.dirname(obj_file) ] do |t|
-              sh "#{go} build -buildmode=c-shared -o #{t.name} #{t.prerequisites[0]}"
+              sh [go, "build", "-buildmode=c-shared", "-o", t.name, t.prerequisites[0]].shelljoin
             end
 
           else
             file obj_file => [ src, File.dirname(obj_file) ] do |t|
-              sh "#{cxx} #{cxxflags} -o #{t.name} -c #{t.prerequisites[0]}"
+              sh [cxx, cxxflags, "-o", t.name, "-c", t.prerequisites[0]].shelljoin
             end
           end
 
@@ -152,8 +154,10 @@ module FFI
                cxx
              elsif src_files.detect { |f| f =~ /\.c$/ }
                cc
-             else
+             elsif src_files.detect { |f| f =~ /\.go$/ }
                go
+             else
+               raise "Unable to find any recognizable source files."
              end
 
         # create all the directories for the output files
@@ -162,10 +166,10 @@ module FFI
         desc "Build dynamic library"
         file lib_name => obj_files do |t|
           if ld == cxx || ld == cc
-            sh "#{ld} #{so_flags} -o #{t.name} #{t.prerequisites.join(' ')} #{ld_flags} #{libs}"
+            sh [ld, so_flags, "-o", t.name, t.prerequisites.join(' '), ld_flags, libs].shelljoin
           else
-            # this is a go library, which is already a shared C lib; copy it into place
-            sh "cp #{t.prerequisites[0]} #{t.name}"
+            # this is a go library precompiled and linked as a shared C lib; copy it into place
+            FileUtils.cp(t.prerequisites[0], t.name)
           end
         end
         CLEAN.include(lib_name)
