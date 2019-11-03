@@ -8,3 +8,4 @@ FFI::Compiler::CompileTask.new('example') do |t|
   t.ldflags << "-arch x86_64 -arch i386" if t.platform.mac?
   t.export '../lib/example/example.rb'
 end
+
