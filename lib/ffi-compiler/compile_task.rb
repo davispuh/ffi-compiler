@@ -1,11 +1,12 @@
-require 'rake'
-require 'rake/tasklib'
-require 'rake/clean'
 require 'ffi'
 require 'fileutils'
+require 'mkmf'
+require 'rake'
+require 'rake/clean'
+require 'rake/tasklib'
+require 'rbconfig'
 require 'shellwords'
 require 'tmpdir'
-require 'rbconfig'
 require_relative 'platform'
 
 module FFI
@@ -260,7 +261,7 @@ module FFI
       end
 
       def go
-        @go ||= (ENV['GO'] || RbConfig::CONFIG['GO'] || 'go')
+        @go ||= (ENV['GO'] || find_executable('go'))
       end
     end
   end
