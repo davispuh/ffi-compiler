@@ -1,0 +1,4 @@
+require 'ffi-compiler/compile_task'
+
+FFI::Compiler::CompileTask.new('example') do |t|
+end
